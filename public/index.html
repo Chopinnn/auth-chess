@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>五子棋小游戏</title>
+    <link rel="stylesheet" href="./index.css" />
+    <style>
+      .exit {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        padding: 10px;
+        background-color: rgb(14, 184, 222);
+        border-radius: 5px;
+        color: #fff;
+        cursor: pointer;
+        width: 70px;
+        text-align: center;
+      }
+      .exit:hover {
+        background-color: rgb(14, 154, 222);
+      }
+      .test {
+        position: fixed;
+        top: 70px;
+        right: 10px;
+        padding: 10px;
+        background-color: rgb(14, 184, 222);
+        border-radius: 5px;
+        color: #fff;
+        cursor: pointer;
+        width: 70px;
+        text-align: center;
+      }
+      .test:hover {
+        background-color: rgb(14, 154, 222);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- 最外层的容器 -->
+    <div class="container">
+      <!-- 棋盘 -->
+      <table class="chessboard"></table>
+    </div>
+    <!-- 退出 -->
+    <div class="exit">退出登录</div>
+    <div class="test">权限按钮</div>
+    <script src="./index.js"></script>
+    <script src="./auth.js"></script>
+  </body>
+</html>
