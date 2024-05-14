@@ -22,7 +22,7 @@
       .exit:hover {
         background-color: rgb(14, 154, 222);
       }
-      .test {
+      .test1 {
         position: fixed;
         top: 70px;
         right: 10px;
@@ -31,10 +31,22 @@
         border-radius: 5px;
         color: #fff;
         cursor: pointer;
-        width: 70px;
+        width: 140px;
         text-align: center;
       }
-      .test:hover {
+      .test2 {
+        position: fixed;
+        top: 130px;
+        right: 10px;
+        padding: 10px;
+        background-color: rgb(14, 184, 222);
+        border-radius: 5px;
+        color: #fff;
+        cursor: pointer;
+        width: 140px;
+        text-align: center;
+      }
+      .test1:hover,.test2:hover {
         background-color: rgb(14, 154, 222);
       }
     </style>
@@ -47,7 +59,8 @@
     </div>
     <!-- 退出 -->
     <div class="exit">退出登录</div>
-    <div class="test">权限按钮</div>
+    <div class="test1">普通用户权限按钮</div>
+    <div class="test2">超级用户权限按钮</div>
     <script src="./index.js"></script>
     <script src="./auth.js"></script>
   </body>

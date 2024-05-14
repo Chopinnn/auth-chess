@@ -6,6 +6,8 @@ let axios = require("axios");
 const https = require("https");
 const fs = require("fs");
 const path = require("path");
+let jwt = require("jsonwebtoken");
+require('dotenv').config();
 
 const instance = axios.create({
   httpsAgent: new https.Agent({
@@ -19,81 +21,39 @@ const options = {
 };
 
 const port = 9998;
+const appId = "9998";
+const secretKey = process.env.SECRET_KEY;
 const app = express();
 https.createServer(options, app).listen(port, () => {
   console.log(`五子棋游戏已启动：https://localhost:${port}`);
 });
 
+app.use(express.json());
 app.use(cookieParser());
 app.use(express.static("public"));
 app.use(cors());
 
-app.get("/checkLogin", (req, res) => {
-  // 通过共享cookie中的token去验证是否登录
-  if (req.cookies["SSO-Cookie"]) {
-    instance
-      .post("https://localhost:3000/cas/checkLogin", {
-        token: req.cookies["SSO-Cookie"],
-      })
-      .then((response) => {
-        if (response.data.code === 1) {
-          res.send({
-            code: 1,
-            msg: "未登录",
-          });
-        } else {
-          res.send({
-            code: 0,
-            data: {
-              msg: "已登录，token有效",
-            },
-          });
-        }
-      });
-  } else {
-    console.log("有cookie");
-    res.send({
-      code: 1,
-      msg: "未登录",
-    });
-  }
-});
 
-app.get("/logout", (req, res) => {
-  instance
-    .get("https://localhost:3000/cas/logout", {
-      headers: {
-        Authorization: req.cookies["SSO-Cookie"],
-      },
-    })
-    .then((response) => {
-      if (response.data.code === 0) {
-        res.cookie("SSO-Cookie", "", { maxAge: 0 });
-        res.send({
-          code: 0,
-          data: {
-            msg: "退出成功",
-          },
-        });
-      } else if (response.data.code === 1) {
-        res.send({
-          code: 1,
-          msg: response.data.msg,
-        });
-      } else {
-        res.send({
-          code: 2,
-          msg: response.data.msg,
-        });
-      }
-    })
-    .catch((err) => {
+// 检查AccessToken是否有效
+app.get("/checkLogin", (req, res) => {
+  let token = req.headers.authorization;
+  jwt.verify(token, secretKey, (err,payload) => {
+    if (err) {
       res.send({
         code: 1,
-        msg: "退出失败",
+        msg: "AccessToken无效"+err,
       });
-    });
+    } else {
+      res.send({
+        code: 0,
+        data: {
+          msg: "AccessToken有效，用户已登录",
+        },
+      });
+    }
+  });
 });
+
 
 app.get("/test", (req, res) => {
   // 先获取csrfToken
@@ -105,7 +65,7 @@ app.get("/test", (req, res) => {
         .get("https://localhost:3000/cas/test", {
           headers: {
             Authorization: req.cookies["SSO-Cookie"], // 测试按钮是受保护的资源
-            csrftoken:csrfToken
+            csrftoken: csrfToken,
           },
         })
         .then((response) => {
