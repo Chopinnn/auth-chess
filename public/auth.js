@@ -12,6 +12,62 @@ function getFromUrl(id) {
     return "";
   }
 }
+var ws = new WebSocket(`wss://localhost:3001`);
+ws.onopen = function () {
+  console.log("wss已连接");
+};
+
+ws.onmessage = async function (event) {
+  console.log("event.data", event.data);
+  console.log('tk', localStorage.getItem(`RefreshToken-${appId}`))
+  let flag = await checkUser(event.data, localStorage.getItem(`RefreshToken-${appId}`))
+  console.log('flag', flag)
+  if (flag) {
+    console.log("接收到退出登录通知");
+    clearToken();
+    ws.close();
+    window.location.href = `https://localhost:3000?appId=${appId}`;
+  }
+};
+
+window.onbeforeunload = function () {
+  if (ws) {
+    ws.close();
+  }
+  console.log("页面跳转");
+};
+
+// 清空本地token
+function clearToken() {
+  if (
+    localStorage.getItem(`AccessToken-${appId}`) &&
+    localStorage.getItem(`RefreshToken-${appId}`)
+  ) {
+    localStorage.removeItem(`AccessToken-${appId}`);
+    localStorage.removeItem(`RefreshToken-${appId}`);
+  }
+}
+
+// 检查需要退出的是否是当前用户
+async function checkUser(token1, token2) {
+  let res = await fetch(`https://localhost:${appId}/checkUser`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      token1: token1,
+      token2: token2,
+    }),
+  })
+  let data = await res.json();
+  if (data.code === 0) {
+    // 允许退出
+    return true
+  } else {
+    return false
+  }
+}
 
 window.onload = function () {
   // 从认证中心跳转到本页面时，会带上授权码
@@ -142,7 +198,7 @@ async function ssoLogin() {
   let result = await res.json();
   if (result?.code === 0) {
     // 单点登录成功，跳转回原应用
-    window.location.href = `${result.data.redirectUrl}?authCode=${
+    window.location.href = `https://localhost:${appId}?authCode=${
       result.data.authCode
     }&username=${result.data.username || ""}&phone=${result.data.phone}`;
   } else {
@@ -163,8 +219,7 @@ async function logout() {
   let data = await res.json();
   if (data.code === 0) {
     // 退出成功
-    localStorage.removeItem(`AccessToken-${appId}`);
-    localStorage.removeItem(`RefreshToken-${appId}`);
+    clearToken();
     window.location.href = `https://localhost:3000?appId=${appId}`;
   } else {
     console.log("退出失败，已经是未登录状态了，或者是数据库修改报错", data.msg);
