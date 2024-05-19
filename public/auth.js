@@ -18,15 +18,28 @@ ws.onopen = function () {
 };
 
 ws.onmessage = async function (event) {
-  console.log("event.data", event.data);
-  console.log('tk', localStorage.getItem(`RefreshToken-${appId}`))
-  let flag = await checkUser(event.data, localStorage.getItem(`RefreshToken-${appId}`))
-  console.log('flag', flag)
-  if (flag) {
-    console.log("接收到退出登录通知");
-    clearToken();
-    ws.close();
-    window.location.href = `https://localhost:3000?appId=${appId}`;
+  let data = JSON.parse(event.data);
+  if (data.task === "clearToken") {
+    let flag1 = await checkUser(
+      data.token,
+      localStorage.getItem(`RefreshToken-${appId}`)
+    );
+    if (flag1) {
+      console.log("接收到退出登录通知");
+      clearToken();
+      ws.close();
+      window.location.href = `https://localhost:3000?appId=${appId}`;
+    }
+  }else if (data.task === "forceLogout") {
+    let flag2 = await checkUser(
+      data.token,
+      localStorage.getItem(`IDToken-${appId}`)
+    );
+    if(flag2){
+      console.log("接收到后台强制退出登录通知");
+      exit.click()
+      ws.close();
+    }
   }
 };
 
@@ -41,10 +54,12 @@ window.onbeforeunload = function () {
 function clearToken() {
   if (
     localStorage.getItem(`AccessToken-${appId}`) &&
-    localStorage.getItem(`RefreshToken-${appId}`)
+    localStorage.getItem(`RefreshToken-${appId}`) &&
+    localStorage.getItem(`IDToken-${appId}`)
   ) {
     localStorage.removeItem(`AccessToken-${appId}`);
     localStorage.removeItem(`RefreshToken-${appId}`);
+    localStorage.removeItem(`IDToken-${appId}`);
   }
 }
 
@@ -59,13 +74,13 @@ async function checkUser(token1, token2) {
       token1: token1,
       token2: token2,
     }),
-  })
+  });
   let data = await res.json();
   if (data.code === 0) {
     // 允许退出
-    return true
+    return true;
   } else {
-    return false
+    return false;
   }
 }
 
@@ -93,6 +108,7 @@ window.onload = function () {
           // 存储token
           localStorage.setItem(`AccessToken-${appId}`, data.data.AccessToken);
           localStorage.setItem(`RefreshToken-${appId}`, data.data.RefreshToken);
+          localStorage.setItem(`IDToken-${appId}`, data.data.IDToken);
           // 刷新页面，去检查是否登录
           window.location.href = `https://localhost:${appId}`;
         } else {
@@ -120,12 +136,12 @@ exit.addEventListener("click", function () {
 
 normalbtn.addEventListener("click", function () {
   console.log("普通用户按钮");
-  test();
+  test('normal');
 });
 
 superbtn.addEventListener("click", function () {
   console.log("超级用户按钮");
-  test();
+  test('super');
 });
 
 // 判断用户是否在其他应用登录过
@@ -173,8 +189,7 @@ async function checkLogin() {
     } else {
       // RefreshToken失效
       // todo:这里应该还要重置数据库中的登录状态
-      localStorage.removeItem(`AccessToken-${appId}`);
-      localStorage.removeItem(`RefreshToken-${appId}`);
+      clearToken();
       window.location.href = `https://localhost:3000?appId=${appId}`;
     }
   }
@@ -229,7 +244,7 @@ async function logout() {
 }
 
 // 权限测试按钮
-async function test() {
+async function test(role) {
   // 先获取csrfToken
   let res0 = await fetch(`https://localhost:3000/cas/csrfToken`, {
     method: "GET",
@@ -247,7 +262,11 @@ async function test() {
   });
   let data = await res.json();
   if (data.code === 0) {
-    window.alert(data.data.msg);
+    if (data.data.role === role || data.data.role === "super") {
+      window.alert(data.data.msg);
+    }else{
+      window.alert('用户'+data.data.info+'，您的权限不足');
+    }
   } else {
     // 当token失效测试失败时，刷新页面
     console.log(data.msg);
